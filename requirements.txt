@@ -1,0 +1,14 @@
+# Probado con Python 3.10 en macOS.
+basic-pitch==0.4.0          # notas que suenan (CoreML en Mac)
+numpy==2.0.2
+scipy==1.15.3
+librosa==0.11.0
+resampy==0.4.2
+llvmlite==0.43.0
+numba==0.60.0
+soundfile>=0.12             # lee WAV y MP3
+flask>=3.0
+pillow>=10.0
+setuptools<81
+imageio-ffmpeg>=0.5         # vídeo (trae ffmpeg)
+reportlab>=4.0              # PDF de acordes

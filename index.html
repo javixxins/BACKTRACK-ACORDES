@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backtrack Acordes</title>
+<link rel="icon" href="/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#120d0a; --panel:#1c1511; --panel2:#251b15; --line:#3a2b20;
+  --text:#f3e9dd; --muted:#b9a690; --gold:#d19d61; --gold2:#e8b878; --red:#b8322a; --ok:#6fae6a;
+  --radius:14px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,sans-serif}
+h1,h2{font-family:Fraunces,Georgia,serif;font-weight:700;margin:0}
+.hero{position:relative;min-height:170px;display:flex;align-items:flex-end;gap:18px;padding:28px 24px;
+  background:radial-gradient(ellipse at 85% 30%,rgba(209,157,97,.28),transparent 55%),linear-gradient(180deg,#2a1c12,var(--bg) 96%)}
+.hero img{width:84px;height:84px;border-radius:20px;box-shadow:0 8px 28px rgba(0,0,0,.5)}
+.hero h1{font-size:clamp(28px,5vw,44px);letter-spacing:.3px}
+.hero p{margin:4px 0 0;color:var(--muted)}
+main{max-width:980px;margin:0 auto;padding:8px 16px 60px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-top:18px}
+.step{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.step b{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--gold);color:#1a120c;font-weight:600}
+.step h2{font-size:20px}
+.muted{color:var(--muted)}
+.drop{display:block;border:2px dashed var(--line);border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:.15s}
+.drop:hover,.drop.over{border-color:var(--gold);background:var(--panel2)}
+.drop strong{color:var(--gold2)}
+.btn{appearance:none;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;padding:9px 14px;font:inherit;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{border-color:var(--gold)}
+.btn.small{padding:5px 10px;font-size:13px}
+.btn.primary{background:var(--gold);color:#1a120c;border-color:var(--gold);font-weight:600}
+.btn.primary:hover{background:var(--gold2)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+select,input[type=text]{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit}
+input[type=range]{width:100%;accent-color:var(--gold)}
+.bar{height:16px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-top:16px}
+.bar div{height:100%;width:0;background:linear-gradient(90deg,var(--red),var(--gold));transition:width .3s}
+.status{display:flex;justify-content:space-between;margin-top:6px;font-size:14px;color:var(--muted)}
+.status .pct{color:var(--gold2);font-weight:600}
+.chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:13px}
+.chip b{color:var(--gold2);font-weight:600}
+.hint{font-size:13px;color:var(--muted);margin-top:8px}
+.chk{display:flex;gap:6px;align-items:center;font-size:14px;cursor:pointer}
+.filerow{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.filerow .name{font-weight:600}
+
+/* ---- acordes */
+.chtop{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.chtop select{width:auto;padding:3px 8px;font-size:13px}
+.mini{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:2px 8px;font:inherit;font-size:12px;cursor:pointer}
+.mini:hover{border-color:var(--gold)}
+.capobox{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;background:var(--panel2);border:1px solid var(--gold);border-radius:12px;padding:10px 14px;margin-bottom:12px}
+.capobox b{font-family:Fraunces,Georgia,serif;font-size:16px}
+.capobox label{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.capobox select{width:auto}
+.capobtns{display:flex;flex-wrap:wrap;gap:4px}
+.capobtns button{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:8px;min-width:34px;padding:4px 8px;font:inherit;font-size:13px;cursor:pointer}
+.capobtns button:hover{border-color:var(--gold)}
+.capobtns button.on{background:var(--gold);border-color:var(--gold);color:#1a120c;font-weight:600}
+.chnow{display:grid;grid-template-columns:1.2fr 1fr 1.3fr;gap:14px;align-items:stretch}
+.chbox{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;gap:12px;align-items:center;min-height:150px}
+.chbox .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.chbox .nm{font-family:Fraunces,Georgia,serif;font-size:44px;line-height:1.05;color:var(--gold2)}
+.chbox .nm.sm{font-size:28px;color:var(--text)}
+.chbox .sub{font-size:13px;color:var(--muted)}
+.chbox svg{flex:none}
+.chtrans{flex-direction:column;align-items:stretch;justify-content:center;gap:8px}
+.chtrans .row{display:flex;align-items:center;gap:10px}
+.chtrans .row label{font-size:13px;color:var(--muted);width:120px}
+.chtrans .row input{flex:1}
+.chplay{width:46px;height:46px;border-radius:50%;border:0;background:var(--gold);color:#1a120c;font-size:20px;cursor:pointer;flex:none}
+.tl{position:relative;overflow-x:auto;overflow-y:hidden;margin-top:14px;border:1px solid var(--line);border-radius:12px;background:#0d0907;height:96px;cursor:pointer}
+.tlin{position:relative;height:100%}
+.tlb{position:absolute;top:22px;height:62px;border-radius:7px;padding:4px 6px;box-sizing:border-box;overflow:hidden;white-space:nowrap;
+  font-weight:600;font-size:15px;color:#1a120c;border:1px solid rgba(0,0,0,.35);transition:filter .1s}
+.tlb small{display:block;font-weight:500;font-size:11px;opacity:.75}
+.tlb.low{background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.0) 0 6px,rgba(0,0,0,.12) 6px 12px)}
+.tlb.now{outline:3px solid #fff;outline-offset:-1px;filter:brightness(1.12)}
+.tlb.nc{background:#2a211b!important;color:var(--muted)}
+.tlbar{position:absolute;top:0;bottom:0;width:1px;background:rgba(232,184,120,.45)}
+.tlbar span{position:absolute;top:3px;left:3px;font-size:10px;color:var(--muted)}
+.tlbeat{position:absolute;top:14px;height:6px;width:1px;background:rgba(232,184,120,.25)}
+.tlhead{position:absolute;top:0;bottom:0;width:2px;background:#fff;box-shadow:0 0 8px #fff;pointer-events:none}
+.zoom{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:6px;font-size:12px;color:var(--muted)}
+.zoom input{width:140px}
+.chedit{margin-top:10px;background:var(--panel2);border:1px solid var(--gold);border-radius:12px;padding:12px}
+.chedit .alts{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chedit .alts button{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:5px 12px;cursor:pointer;font:inherit;font-size:14px}
+.chedit .alts button:hover{border-color:var(--gold)}
+.chedit .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chedit select{width:auto}
+.sheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;margin-top:12px}
+.sheet .it{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center}
+.sheet .it b{display:block;font-family:Fraunces,Georgia,serif;font-size:20px;color:var(--gold2)}
+.sheet .it small{display:block;font-size:11px;color:var(--muted);min-height:1.2em}
+@media (max-width:860px){.chnow{grid-template-columns:1fr 1fr}.chtrans{grid-column:1 / -1}}
+@media (max-width:560px){.chnow{grid-template-columns:1fr}.chbox .nm{font-size:36px}}
+.expbox{margin-top:14px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.expbox h3{font-family:Fraunces,Georgia,serif;font-size:16px;margin:0 0 4px}
+.expbox .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+.expbox select{width:auto}
+details{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+summary{cursor:pointer;color:var(--gold2);font-weight:500}
+</style>
+</head>
+<body>
+<header class="hero">
+  <img src="/icon.png" alt="">
+  <div>
+    <h1>Backtrack Acordes</h1>
+    <p>Sube un MP3 o WAV: detecta los acordes para guitarra, elige la cejilla y exporta el vídeo backtrack y el PDF.</p>
+  </div>
+</header>
+<main>
+  <section class="card">
+    <div class="step"><b>1</b><h2>Sube tu canción (MP3 o WAV)</h2></div>
+    <label class="drop" id="drop">
+      <input type="file" id="fileIn" accept=".mp3,.wav,audio/mpeg,audio/mp3,audio/wav,audio/x-wav" hidden>
+      <div style="font-size:30px">🎵</div>
+      <div><strong>Arrastra aquí tu archivo</strong> o pulsa para elegirlo</div>
+      <div class="muted" style="font-size:13px;margin-top:4px">MP3 o WAV. Todo se analiza en tu ordenador, sin subir nada a Internet.</div>
+    </label>
+    <div class="filerow" id="fileRow" hidden>
+      <span class="name" id="fileName"></span><span class="muted" id="fileInfo"></span>
+      <label class="chk"><input type="checkbox" id="rmPerc" checked> Quitar la percusión antes de analizar (recomendado)</label>
+      <button class="btn small" id="reBtn">↻ Volver a analizar</button>
+    </div>
+    <div id="anProg" hidden>
+      <div class="bar"><div id="anBar"></div></div>
+      <div class="status"><span id="anMsg"></span><span class="pct" id="anPct"></span></div>
+    </div>
+  </section>
+
+  <section class="card" id="chordSec" hidden>
+    <div class="step"><b>2</b><h2>Acordes de la canción</h2></div>
+    <div class="chtop" id="chTop"></div>
+    <div class="capobox">
+      <b>Cejilla</b>
+      <div class="capobtns" id="capoBtns"></div>
+      <label>Posturas <select id="flavor"><option value="flamenco">Flamencas (cuerdas al aire, color flamenco)</option><option value="natural">Naturales (sólo notas del acorde)</option></select></label>
+      <span class="muted" style="font-size:13px" id="capoInfo"></span>
+    </div>
+    <div class="chnow">
+      <div class="chbox"><div><div class="lbl">Ahora</div><div class="nm" id="chCur">—</div><div class="sub" id="chCurSub"></div></div><div id="chCurDia"></div></div>
+      <div class="chbox"><div><div class="lbl">Siguiente</div><div class="nm sm" id="chNext">—</div><div class="sub" id="chNextSub"></div></div><div id="chNextDia"></div></div>
+      <div class="chbox chtrans">
+        <div class="row"><button class="chplay" id="chPlay" title="Reproducir (barra espaciadora)">▶</button><span id="chTime" class="muted">0:00 / 0:00</span></div>
+        <div class="row"><label>Volumen <span id="chVoV"></span></label><input type="range" id="chVo" min="0" max="1.5" step="0.01" value="1"></div>
+        <div class="row"><label>Velocidad <span id="chSpV"></span></label><input type="range" id="chSp" min="0.5" max="1" step="0.05" value="1"></div>
+      </div>
+    </div>
+    <div class="tl" id="chTL"><div class="tlin" id="chTLin"></div></div>
+    <div class="zoom">Zoom <input type="range" id="chZoom" min="30" max="220" step="5" value="90"></div>
+    <div class="hint">Pulsa la línea de tiempo para ir a ese momento, o un acorde para corregirlo. Las rayas indican acordes menos seguros. Las líneas numeradas son los compases.</div>
+    <div class="chedit" id="chEdit" hidden></div>
+
+    <details open>
+      <summary>Posturas de todos los acordes de la canción</summary>
+      <div class="sheet" id="chSheet"></div>
+    </details>
+  </section>
+
+  <section class="card" id="expSec" hidden>
+    <div class="step"><b>3</b><h2>Exportar vídeo backtrack y PDF</h2></div>
+    <div class="expbox" style="margin-top:0">
+      <h3>Exportar para aprender la canción</h3>
+      <div class="muted" style="font-size:13px">Vídeo horizontal con los acordes en pantalla sincronizados con el audio original (acorde actual con su diagrama, el siguiente con cuenta atrás, los pulsos del compás y la línea de tiempo), y PDF horizontal con los diagramas y los acordes compás a compás. Eliges la carpeta donde guardarlos.</div>
+      <div class="row">
+        <button class="btn primary" id="vidBtn">🎬 Exportar vídeo backtrack</button>
+        <label class="muted" style="font-size:13px">Calidad
+          <select id="vidQ"><option value="1080">Full HD 1080p (máxima calidad)</option><option value="720">HD 720p (más rápido y ligero)</option><option value="whatsapp">Optimizado para WhatsApp (menos de 16 MB)</option></select></label>
+      </div>
+      <div class="row">
+        <button class="btn" id="pdfBtn">📄 Exportar acordes en PDF</button>
+        <span class="muted" style="font-size:13px">A4 horizontal, listo para imprimir.</span>
+        <button class="btn small" id="chTxt">⬇ Acordes (.txt)</button>
+      </div>
+      <div id="expProgBox" style="display:none">
+        <div class="bar" style="height:10px"><div id="expBar"></div></div>
+        <div class="status"><span id="expMsg"></span><span class="pct" id="expPct"></span></div>
+      </div>
+      <div class="row" id="expRes"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+function fmtT(t){ t = Math.max(0, Math.floor(t)); return Math.floor(t/60)+':'+String(t%60).padStart(2,'0'); }
+let file = null, actx = null, obuf = null;
+function ctx(){ if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)(); return actx; }
+function title(){ return file ? file.name.replace(/\.(mp3|wav|wave)$/i,'') : 'Acordes'; }
+
+// ---------- subir y analizar
+const drop = $('drop');
+['dragenter','dragover'].forEach(e=>drop.addEventListener(e, ev=>{ ev.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(e=>drop.addEventListener(e, ev=>{ ev.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', ev=>{ const f = ev.dataTransfer.files[0]; if(f) pick(f); });
+$('fileIn').onchange = ()=>{ if($('fileIn').files[0]) pick($('fileIn').files[0]); };
+$('reBtn').onclick = ()=>{ if(file) analyze(); };
+function pick(f){
+  if(!/\.(mp3|wav|wave)$/i.test(f.name)){ alert('El archivo tiene que ser MP3 o WAV.'); return; }
+  file = f; $('fileRow').hidden = false; $('fileName').textContent = f.name;
+  $('fileInfo').textContent = (f.size/1e6).toFixed(1).replace('.',',')+' MB';
+  analyze();
+}
+function anSet(p, m){ $('anBar').style.width = p+'%'; $('anPct').textContent = p!=null ? Math.round(p)+' %' : ''; $('anMsg').textContent = m; }
+async function analyze(){
+  chPause(); CH.sid = null; CH.res = null; obuf = null;
+  $('chordSec').hidden = true; $('expSec').hidden = true; $('anProg').hidden = false; $('reBtn').disabled = true;
+  anSet(1, 'Subiendo el archivo…');
+  const fd = new FormData(); fd.append('file', file); fd.append('remove_percussion', $('rmPerc').checked ? '1' : '0');
+  const r = await fetch('/api/analyze',{method:'POST', body:fd}).then(r=>r.json()).catch(()=>({error:'No se ha podido conectar con la app.'}));
+  if(r.error){ anSet(0, r.error); $('reBtn').disabled = false; return; }
+  const sid = r.id; CH.sid = sid;
+  // el audio se decodifica mientras tanto, para reproducirlo sincronizado
+  const audioP = fetch('/api/audio/'+sid).then(r=>r.arrayBuffer()).then(b=>ctx().decodeAudioData(b)).catch(()=>null);
+  let st;
+  while(CH.sid===sid){
+    await new Promise(r=>setTimeout(r,600));
+    st = await fetch('/api/analysis/'+sid).then(r=>r.json()).catch(()=>({}));
+    if(st.status==='running'){ anSet(st.progress||0, st.message||'Analizando…'); continue; }
+    break;
+  }
+  $('reBtn').disabled = false;
+  if(CH.sid!==sid) return;
+  if(!st || st.status!=='done'){ anSet(0, (st&&(st.message||st.error))||'No he podido detectar los acordes.'); return; }
+  anSet(100, 'Acordes listos');
+  obuf = await audioP;
+  chLoad(st.result);
+}
+
+// ---------- acordes
+const CH = {sid:null, res:null, segs:[], beats:[], phase:0, meter:4, notation:'es', flats:false, voic:[], capo:0, capoMode:'auto',
+            px:90, playing:false, t0:0, off:0, src:null, gain:null, raf:null, edit:-1};
+const NS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'], NF = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+const ES = ['Do','Do#','Re','Re#','Mi','Fa','Fa#','Sol','Sol#','La','La#','Si'], EF = ['Do','Reb','Re','Mib','Mi','Fa','Solb','Sol','Lab','La','Sib','Si'];
+const QSUF = {maj:'', min:'m', '7':'7', maj7:'maj7', min7:'m7', dim:'dim', sus4:'sus4'};
+const QNAME = {maj:'mayor', min:'menor', '7':'séptima', maj7:'séptima mayor', min7:'menor séptima', dim:'disminuido', sus4:'suspendido 4ª'};
+function chName(root, q, lang){ if(root==null) return lang==='es'?'Sin acorde':'N.C.'; const n = lang==='es' ? (CH.flats?EF:ES) : (CH.flats?NF:NS); return n[root]+QSUF[q]; }
+function chLabel(root, q){ return root==null ? 'N' : NS[root]+':'+q; }
+
+async function chLoad(res){
+  CH.res = res; CH.flats = res.key.flats; CH.beats = res.beats.slice(); CH.meter = res.meter;
+  CH.phase = Math.max(0, CH.beats.findIndex(b=>Math.abs(b-res.downbeats[0])<1e-3));
+  CH.segs = res.segments.map(x=>Object.assign({}, x)); CH.off = 0;
+  $('chordSec').hidden = false; $('expSec').hidden = false;
+  capoButtons(); await chVoicings(); chTop(); chTimeline(); chUpdate(0, true);
+}
+function chDownbeats(){ const out=[]; for(let i=CH.phase % CH.meter; i<CH.beats.length; i+=CH.meter) out.push(CH.beats[i]); return out; }
+function chTempo(){ const d=[]; for(let i=1;i<CH.beats.length;i++) d.push(CH.beats[i]-CH.beats[i-1]); d.sort((a,b)=>a-b); return d.length ? 60/d[Math.floor(d.length/2)] : 0; }
+function chTop(){
+  const r = CH.res, conf = Math.round(r.reliability*100);
+  $('chTop').innerHTML =
+    `<span class="chip">Tonalidad: <b>${r.key.name}</b> <span class="muted">(${r.key.en})</span></span>`+
+    `<span class="chip">Tempo: <b>${Math.round(chTempo())} BPM</b> <button class="mini" id="chHalf" title="Si el pulso va el doble de rápido">×½</button> <button class="mini" id="chDbl" title="Si el pulso va a la mitad">×2</button></span>`+
+    `<span class="chip">Compás: <select id="chMeter"><option value="4">4 tiempos</option><option value="3">3 tiempos</option><option value="12">12 (flamenco)</option></select></span>`+
+    `<span class="chip">Fiabilidad media: <b>${conf} %</b></span>`+
+    `<span class="chip">Afinación: <b>${r.tuning_cents>0?'+':''}${String(r.tuning_cents).replace('.',',')} cents</b></span>`+
+    `<span class="chip">Nombres: <select id="chNot"><option value="es">Do Re Mi</option><option value="en">C D E</option></select></span>`;
+  $('chMeter').value = String(CH.meter); $('chNot').value = CH.notation;
+  $('chMeter').onchange = ()=>{ CH.meter = +$('chMeter').value; CH.phase = CH.phase % CH.meter; chTimeline(); };
+  $('chNot').onchange = ()=>{ CH.notation = $('chNot').value; chTimeline(); chUpdate(chPos(), true); };
+  $('chHalf').onclick = ()=>{ if(CH.beats.length<4) return; CH.beats = CH.beats.filter((_,i)=>i%2===0); CH.phase = Math.floor(CH.phase/2); chTop(); chTimeline(); };
+  $('chDbl').onclick = ()=>{ const b=[]; for(let i=0;i<CH.beats.length;i++){ b.push(CH.beats[i]); if(i+1<CH.beats.length) b.push((CH.beats[i]+CH.beats[i+1])/2); } CH.beats=b; CH.phase*=2; chTop(); chTimeline(); };
+}
+// --- cejilla
+function capoButtons(){
+  const opts = [['auto','Automática'],['0','Sin cejilla']].concat([1,2,3,4,5,6,7,8,9].map(k=>[String(k), String(k)]));
+  $('capoBtns').innerHTML = opts.map(o=>`<button data-c="${o[0]}" title="${o[0]==='auto'?'La elige la app, como un guitarrista flamenco':o[0]==='0'?'Sin cejilla':'Cejilla en el traste '+o[0]}" class="${CH.capoMode===o[0]?'on':''}">${o[1]}</button>`).join('');
+  $('capoBtns').querySelectorAll('button').forEach(b=>b.onclick = ()=>{ CH.capoMode = b.dataset.c; capoButtons(); chVoicings(); });
+}
+$('flavor').onchange = ()=>chVoicings();
+async function chVoicings(){
+  const labels = CH.segs.map(x=>x.label), durs = CH.segs.map(x=>x.end-x.start);
+  const r = await fetch('/api/chords/voicings',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({labels, durs, capo:CH.capoMode, flavor:$('flavor').value})}).then(r=>r.json()).catch(()=>({}));
+  if(!r.voicings){ $('capoInfo').textContent = r.error || 'No he podido calcular las posturas.'; return; }
+  CH.voic = r.voicings; CH.capo = r.capo;
+  $('capoInfo').innerHTML = CH.capo ? `Cejilla en el <b style="color:var(--gold2)">traste ${CH.capo}</b>${CH.capoMode==='auto'?' (elegida automáticamente)':''}: los diagramas muestran la forma que tocas.` : `Sin cejilla${CH.capoMode==='auto'?' (elegido automáticamente)':''}.`;
+  chSheet(); chUpdate(chPos(), true);
+}
+function chSheet(){
+  const seen = new Set(); let h = '';
+  CH.segs.forEach((x,i)=>{ if(x.root==null || seen.has(x.label)) return; seen.add(x.label); const v = CH.voic[i];
+    h += `<div class="it"><b>${chName(x.root,x.quality,CH.notation)}</b><small>${v&&v.capo?'forma de '+v.shape:QNAME[x.quality]}</small>${diagram(v, 0.9)}</div>`; });
+  $('chSheet').innerHTML = h;
+}
+function chColor(root, q){ if(root==null) return '#2a211b'; const h = (root*30+20)%360; const l = q==='min'||q==='min7' ? 58 : q==='dim' ? 50 : 66; return `hsl(${h} 55% ${l}%)`; }
+function chTimeline(){
+  const dur = CH.res.duration, W = Math.max(dur*CH.px, $('chTL').clientWidth);
+  const inn = $('chTLin'); inn.style.width = W+'px';
+  let h = '';
+  CH.beats.forEach(b=>{ h += `<div class="tlbeat" style="left:${b*CH.px}px"></div>`; });
+  chDownbeats().forEach((b,i)=>{ h += `<div class="tlbar" style="left:${b*CH.px}px"><span>${i+1}</span></div>`; });
+  CH.segs.forEach((x,i)=>{
+    const w = Math.max(2,(x.end-x.start)*CH.px-2);
+    h += `<div class="tlb ${x.root==null?'nc':''} ${x.conf<0.55?'low':''}" data-i="${i}" style="left:${x.start*CH.px+1}px;width:${w}px;background:${chColor(x.root,x.quality)}" title="${chName(x.root,x.quality,'es')} (${chName(x.root,x.quality,'en')}) · ${Math.round(x.conf*100)} % seguro">${x.root==null?'—':chName(x.root,x.quality,CH.notation)}<small>${x.root==null?'':Math.round(x.conf*100)+' %'}</small></div>`;
+  });
+  h += `<div class="tlhead" id="chHead" style="left:${chPos()*CH.px}px"></div>`;
+  inn.innerHTML = h;
+  inn.querySelectorAll('.tlb').forEach(el=>el.onclick = e=>{ e.stopPropagation(); chSeek(CH.segs[+el.dataset.i].start); chEditOpen(+el.dataset.i); });
+  $('chTL').onclick = e=>{ const r = $('chTLin').getBoundingClientRect(); chSeek((e.clientX - r.left)/CH.px); };
+  chLastSeg = -2; chUpdate(chPos(), true);
+}
+$('chZoom').oninput = ()=>{ CH.px = +$('chZoom').value; if(CH.res) chTimeline(); };
+function chSegAt(t){ for(let i=0;i<CH.segs.length;i++){ if(t>=CH.segs[i].start && t<CH.segs[i].end) return i; } return -1; }
+function diagram(v, size=1){
+  if(!v) return '';
+  const fr = v.frets, used = fr.filter(f=>f>0), maxf = used.length?Math.max(...used):0, minf = used.length?Math.min(...used):0;
+  const base = maxf>4 ? minf : 1, W=96*size, H=118*size, x0=14*size, y0=24*size, sx=13.5*size, sy=18*size;
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-label="Diagrama de guitarra">`;
+  for(let i=0;i<6;i++) s += `<line x1="${x0+i*sx}" y1="${y0}" x2="${x0+i*sx}" y2="${y0+5*sy}" stroke="#b9a690" stroke-width="${i<3?1.6:1}"/>`;
+  for(let j=0;j<=5;j++) s += `<line x1="${x0}" y1="${y0+j*sy}" x2="${x0+5*sx}" y2="${y0+j*sy}" stroke="#7a6550" stroke-width="${j===0&&base===1?4:1}"/>`;
+  if(base>1) s += `<text x="${x0+5*sx+5}" y="${y0+sy*0.7}" font-size="${11*size}" fill="#b9a690">${base}</text>`;
+  fr.forEach((f,i)=>{ const x=x0+i*sx;
+    if(f<0) s += `<text x="${x}" y="${y0-7*size}" font-size="${11*size}" fill="#b9a690" text-anchor="middle">×</text>`;
+    else if(f===0) s += `<circle cx="${x}" cy="${y0-10*size}" r="${4*size}" fill="none" stroke="#e8b878" stroke-width="1.4"/>`;
+    else s += `<circle cx="${x}" cy="${y0+(f-base+0.5)*sy}" r="${5.2*size}" fill="#e8b878"/>`; });
+  if(v.capo) s += `<text x="${x0+2.5*sx}" y="${H-3*size}" font-size="${10*size}" fill="#e8b878" text-anchor="middle">cejilla ${v.capo}</text>`;
+  return s + '</svg>';
+}
+let chLastSeg = -2;
+function chUpdate(t, force){
+  if(!CH.res) return;
+  const i = chSegAt(t);
+  if($('chHead')) $('chHead').style.left = (t*CH.px)+'px';
+  $('chTime').textContent = `${fmtT(t)} / ${fmtT(CH.res.duration)}`;
+  const x = CH.segs[i], nxtI = CH.segs.findIndex((s,k)=>k>i && s.root!=null), n = nxtI>=0 ? CH.segs[nxtI] : null;
+  $('chNextSub').textContent = n ? `en ${Math.max(0, n.start - t).toFixed(1).replace('.',',')} s` : '';
+  if(i===chLastSeg && !force) return; chLastSeg = i;
+  document.querySelectorAll('.tlb.now').forEach(e=>e.classList.remove('now'));
+  const el = document.querySelector(`.tlb[data-i="${i}"]`); if(el) el.classList.add('now');
+  $('chCur').textContent = x ? chName(x.root,x.quality,CH.notation) : '—';
+  $('chCurSub').textContent = x && x.root!=null ? `${chName(x.root,x.quality,CH.notation==='es'?'en':'es')} · ${QNAME[x.quality]}${CH.voic[i]?' · '+CH.voic[i].name:''}` : '';
+  $('chCurDia').innerHTML = x ? diagram(CH.voic[i]) : '';
+  $('chNext').textContent = n ? chName(n.root,n.quality,CH.notation) : '—';
+  $('chNextDia').innerHTML = n ? diagram(CH.voic[nxtI], 0.8) : '';
+}
+// --- reproducción sincronizada con la línea de tiempo
+function rate(){ return +$('chSp').value; }
+function chPos(){ return CH.playing ? Math.min(CH.res.duration, (ctx().currentTime - CH.t0)*rate() + CH.off) : CH.off; }
+function chPlay(){
+  if(!CH.res) return;
+  if(!obuf){ $('chTime').textContent = 'Cargando el audio…'; return; }
+  const c = ctx(); c.resume();
+  const s = c.createBufferSource(), g = c.createGain(); s.buffer = obuf; s.playbackRate.value = rate(); g.gain.value = +$('chVo').value;
+  s.connect(g); g.connect(c.destination); s.start(0, CH.off); CH.src = s; CH.gain = g;
+  CH.t0 = c.currentTime; CH.playing = true; $('chPlay').textContent='⏸';
+  const loop = ()=>{ if(!CH.playing) return; const t = chPos();
+    if(t >= CH.res.duration - 0.02){ chPause(); CH.off = 0; chUpdate(0, true); return; }
+    chUpdate(t); const tl = $('chTL'), xx = t*CH.px; if(xx < tl.scrollLeft + 40 || xx > tl.scrollLeft + tl.clientWidth*0.7) tl.scrollLeft = xx - tl.clientWidth*0.3;
+    CH.raf = requestAnimationFrame(loop); };
+  loop();
+}
+function chPause(){ if(!CH.playing) return; CH.off = chPos(); CH.playing = false; $('chPlay').textContent='▶'; try{ CH.src.stop(); }catch(e){} CH.src = null; cancelAnimationFrame(CH.raf); }
+function chSeek(t){ const was = CH.playing; chPause(); CH.off = Math.max(0, Math.min(t, CH.res.duration-0.05)); chUpdate(CH.off, true); if(was) chPlay(); }
+$('chPlay').onclick = ()=>{ if(CH.playing) chPause(); else chPlay(); };
+document.addEventListener('keydown', e=>{ if(e.code==='Space' && CH.res && !/INPUT|SELECT|TEXTAREA|BUTTON/.test(e.target.tagName)){ e.preventDefault(); $('chPlay').click(); } });
+const chVol = ()=>{ $('chVoV').textContent = Math.round($('chVo').value*100)+' %'; if(CH.gain) CH.gain.gain.setTargetAtTime(+$('chVo').value, ctx().currentTime, 0.02); };
+$('chVo').oninput = chVol; chVol();
+const chSpd = ()=>{ $('chSpV').textContent = Math.round(rate()*100)+' %'; if(CH.playing){ const t = chPos(); chPause(); CH.off = t; chPlay(); } };
+$('chSp').oninput = chSpd; $('chSpV').textContent = '100 %';
+// --- corregir un acorde
+function chEditOpen(i){
+  const x = CH.segs[i]; CH.edit = i;
+  const alts = (x.alts||[]).map(a=>`<button data-r="${a.root}" data-q="${a.quality}">${chName(a.root,a.quality,CH.notation)} <span class="muted">${Math.round(a.p*100)} %</span></button>`).join('');
+  $('chEdit').innerHTML = `<b>Acorde de ${fmtT(x.start)} a ${fmtT(x.end)}:</b> ${chName(x.root,x.quality,CH.notation)} <span class="muted">(${Math.round(x.conf*100)} % seguro)</span>
+    <div class="muted" style="font-size:13px;margin-top:6px">Otras posibilidades que ha oído la app:</div><div class="alts">${alts||'<span class="muted">ninguna</span>'}<button data-r="" data-q="">Sin acorde</button></div>
+    <div class="row"><span class="muted" style="font-size:13px">O elige tú:</span>
+      <select id="chER">${(CH.flats?EF:ES).map((n,k)=>`<option value="${k}">${CH.notation==='es'?n:(CH.flats?NF:NS)[k]}</option>`).join('')}</select>
+      <select id="chEQ">${Object.keys(QSUF).map(q=>`<option value="${q}">${QNAME[q]}</option>`).join('')}</select>
+      <button class="btn small primary" id="chEOk">Aplicar</button><button class="btn small" id="chEX">Cerrar</button></div>`;
+  $('chEdit').hidden = false; if(x.root!=null){ $('chER').value = x.root; $('chEQ').value = x.quality; }
+  $('chEdit').querySelectorAll('.alts button').forEach(b=>b.onclick = ()=>chSetChord(i, b.dataset.r===''?null:+b.dataset.r, b.dataset.q||null));
+  $('chEOk').onclick = ()=>chSetChord(i, +$('chER').value, $('chEQ').value);
+  $('chEX').onclick = ()=>{ $('chEdit').hidden = true; };
+}
+async function chSetChord(i, root, q){
+  const x = CH.segs[i];
+  if(x.root!=null && !(x.alts||[]).some(a=>a.root===x.root&&a.quality===x.quality)) x.alts = [{root:x.root, quality:x.quality, label:x.label, p:x.conf}].concat(x.alts||[]).slice(0,4);
+  x.root = root; x.quality = root==null ? null : q; x.label = chLabel(root, q); x.conf = 1; x.edited = true;
+  // dos acordes iguales seguidos se unen
+  const merged = [];
+  CH.segs.forEach(s=>{ const p = merged[merged.length-1]; if(p && p.label===s.label){ p.end = s.end; } else merged.push(s); });
+  CH.segs = merged;
+  $('chEdit').hidden = true; await chVoicings(); chTimeline(); chUpdate(chPos(), true);
+}
+function chDownloadTxt(){
+  const lines = ['Acordes detectados por Backtrack Acordes', `Tonalidad: ${CH.res.key.name} · Tempo: ${Math.round(chTempo())} BPM · Compás: ${CH.meter}`,
+    CH.capo ? `Cejilla en el traste ${CH.capo}` : 'Sin cejilla', ''];
+  CH.segs.forEach((x,i)=>{ if(x.root==null) return; const v = CH.voic[i];
+    lines.push(`${fmtT(x.start).padStart(5)}  ${chName(x.root,x.quality,'es').padEnd(8)} ${chName(x.root,x.quality,'en').padEnd(7)} ${v?'['+v.frets.map(f=>f<0?'x':f).join(' ')+']  '+v.name:''}`); });
+  lines.push('', '# Formato .lab (MIREX): inicio fin acorde');
+  CH.segs.forEach(x=>lines.push(`${x.start.toFixed(3)}\t${x.end.toFixed(3)}\t${x.label}`));
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([lines.join('\n')], {type:'text/plain'}));
+  a.download = title() + ' - acordes.txt'; a.click();
+}
+$('chTxt').onclick = ()=>{ if(CH.res) chDownloadTxt(); };
+
+// ---------- exportar vídeo backtrack y PDF de acordes
+function expData(){
+  return {title: title(), key_name: CH.res.key.name, tempo: chTempo(), meter: CH.meter,
+    capo: CH.capo, flats: CH.flats, notation: CH.notation, duration: CH.res.duration,
+    segments: CH.segs.map(x=>({start:x.start, end:x.end, label:x.label, root:x.root, quality:x.quality})),
+    voicings: CH.voic, beats: CH.beats, downbeats: chDownbeats()};
+}
+async function expFolder(){
+  const r = await fetch('/api/choose-folder',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(r=>r.json()).catch(()=>({}));
+  return r.folder || null;
+}
+function expShow(path, extra){
+  const nm = path.split(/[\\/]/).pop();
+  $('expRes').innerHTML = `<span style="color:var(--ok)">✓ Guardado: <b>${nm.replace(/</g,'&lt;')}</b></span>${extra||''} <button class="btn small" id="expOpen">Mostrar en la carpeta</button>`;
+  $('expOpen').onclick = ()=>fetch('/api/open-folder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path})});
+}
+$('pdfBtn').onclick = async ()=>{
+  if(!CH.res) return;
+  $('expRes').textContent = 'Elige la carpeta en la ventana que se ha abierto…';
+  const folder = await expFolder(); if(!folder){ $('expRes').textContent = ''; return; }
+  const r = await fetch('/api/chords/export',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({kind:'pdf', folder, name: title(), data: expData()})}).then(r=>r.json()).catch(()=>({error:'No se ha podido conectar con la app.'}));
+  if(r.error){ $('expRes').textContent = r.error; return; }
+  expShow(r.saved);
+};
+$('vidBtn').onclick = async ()=>{
+  if(!CH.res) return;
+  $('expRes').textContent = 'Elige la carpeta en la ventana que se ha abierto…';
+  const folder = await expFolder(); if(!folder){ $('expRes').textContent = ''; return; }
+  $('expRes').textContent = ''; $('vidBtn').disabled = true; $('expProgBox').style.display = 'block';
+  const set = (p,m)=>{ $('expBar').style.width = p+'%'; $('expPct').textContent = Math.round(p)+' %'; $('expMsg').textContent = m; };
+  set(0, 'Preparando el vídeo…');
+  const body = {kind:'video', sid: CH.sid, folder, name: title(), data: expData(), quality: $('vidQ').value, orig_gain: +$('chVo').value};
+  const r = await fetch('/api/chords/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()).catch(()=>({error:'No se ha podido conectar con la app.'}));
+  if(r.error){ set(0, r.error); $('vidBtn').disabled = false; return; }
+  let j;
+  while(true){
+    await new Promise(r=>setTimeout(r,700));
+    j = await fetch('/api/job/'+r.id).then(r=>r.json()).catch(()=>({}));
+    if(j.status==='done' || j.status==='error') break;
+    set(j.progress||0, j.message||'Creando el vídeo…');
+  }
+  $('vidBtn').disabled = false;
+  if(j.status!=='done'){ set(0, j.message||'No he podido crear el vídeo.'); return; }
+  set(100, '¡Vídeo listo!');
+  const i = j.info, wa = i.whatsapp_ok===true ? ' · listo para WhatsApp' : i.whatsapp_ok===false ? ' · pesa más de 16 MB: WhatsApp lo enviará como documento' : '';
+  expShow(i.saved, ` <span class="muted">(${i.quality}, ${String(i.mb).replace('.',',')} MB${wa})</span>`);
+};
+</script>
+</body>
+</html>
